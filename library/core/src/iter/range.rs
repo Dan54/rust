@@ -1008,6 +1008,20 @@ unsafe impl<A: TrustedStep> TrustedLen for ops::Range<A> {}
 #[stable(feature = "fused", since = "1.26.0")]
 impl<A: Step> FusedIterator for ops::Range<A> {}
 
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<A: Step> PeekableIterator for ops::Range<A> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        func(
+            if self.start < self.end {
+                Some(&self.start)
+            }
+            else {
+                None
+            }
+        )
+    }
+}
+
 #[stable(feature = "rust1", since = "1.0.0")]
 impl<A: Step> Iterator for ops::RangeFrom<A> {
     type Item = A;
@@ -1037,6 +1051,13 @@ unsafe impl<A: TrustedStep> TrustedLen for ops::RangeFrom<A> {}
 
 #[stable(feature = "fused", since = "1.26.0")]
 impl<A: Step> FusedIterator for ops::RangeFrom<A> {}
+
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<A: Step> PeekableIterator for ops::RangeFrom<A> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        func(Some(&self.start))
+    }
+}
 
 trait RangeInclusiveIteratorImpl {
     type Item;
@@ -1396,3 +1417,17 @@ unsafe impl<A: TrustedStep> TrustedLen for ops::RangeInclusive<A> {}
 
 #[stable(feature = "fused", since = "1.26.0")]
 impl<A: Step> FusedIterator for ops::RangeInclusive<A> {}
+
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<A: Step> PeekableIterator for ops::RangeInclusive<A> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        func(
+            if self.is_empty() {
+                None
+            }
+            else {
+                Some(&self.start)
+            }
+        )
+    }
+}
