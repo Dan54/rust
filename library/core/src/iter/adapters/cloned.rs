@@ -188,3 +188,10 @@ unsafe impl<I: InPlaceIterable> InPlaceIterable for Cloned<I> {
     const EXPAND_BY: Option<NonZero<usize>> = I::EXPAND_BY;
     const MERGE_BY: Option<NonZero<usize>> = I::MERGE_BY;
 }
+
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<I: PeekableIterator> PeekableIterator for Cloned<I> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        self.it.peek_with(|&next| func(next))
+    }
+}

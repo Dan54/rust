@@ -327,6 +327,36 @@ impl<A: Default, B: Default> Default for Chain<A, B> {
     }
 }
 
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<A: PeekableIterator, B: PeekableIterator> PeekableIterator for Chain<A, B> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        let mut a_opt = &mut self.a;
+        let mut b_opt = &mut self.b;
+        if let Some(a) = a_opt.as_mut() {
+            // Try peeking a
+            let (result, a_empty, b_empty) = a.peek_with(|next_a| {
+                if next_a.is_some() {
+                    func(next_a)
+                }
+                // if a is empty, try peeking b
+                else if let Some(b) = b_opt.as_mut() {
+                    b.peek_with(|next_b| func(next_b))
+                }
+                // if both are empty, then Chain is empty
+                else {
+                    func(None)
+                }
+            });
+        }
+        else if let Some(b) = b_opt.as_mut() {
+            b.peek_with(|next_b| func(next_b))
+        }
+        else {
+            func(None)
+        }
+    }
+}
+
 #[inline]
 fn and_then_or_clear<T, U>(opt: &mut Option<T>, f: impl FnOnce(&mut T) -> Option<U>) -> Option<U> {
     let x = f(opt.as_mut()?);
