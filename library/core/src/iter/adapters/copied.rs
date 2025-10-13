@@ -1,6 +1,6 @@
 use crate::iter::adapters::zip::try_get_unchecked;
 use crate::iter::adapters::{SourceIter, TrustedRandomAccess, TrustedRandomAccessNoCoerce};
-use crate::iter::{FusedIterator, InPlaceIterable, TrustedLen};
+use crate::iter::{FusedIterator, InPlaceIterable, PeekableIterator, TrustedLen};
 use crate::mem::{MaybeUninit, SizedTypeProperties};
 use crate::num::NonZero;
 use crate::ops::Try;
@@ -275,8 +275,12 @@ unsafe impl<I: InPlaceIterable> InPlaceIterable for Copied<I> {
 }
 
 #[unstable(feature = "peekable_iterator", issue = "132973")]
-impl<I: PeekableIterator> PeekableIterator for Copied<I> {
+impl<'b, I, U: 'b> PeekableIterator for Copied<I>
+where
+    I: PeekableIterator<Item = &'b U>,
+    U: Copy,
+{
     fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
-        self.it.peek_with(|&next| func(next))
+        self.it.peek_with(|next| func(next.copied()))
     }
 }

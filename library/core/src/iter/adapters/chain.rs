@@ -1,4 +1,4 @@
-use crate::iter::{FusedIterator, TrustedLen};
+use crate::iter::{FusedIterator, PeekableIterator, TrustedLen};
 use crate::num::NonZero;
 use crate::ops::Try;
 
@@ -328,13 +328,17 @@ impl<A: Default, B: Default> Default for Chain<A, B> {
 }
 
 #[unstable(feature = "peekable_iterator", issue = "132973")]
-impl<A: PeekableIterator, B: PeekableIterator> PeekableIterator for Chain<A, B> {
+impl<A, B> PeekableIterator for Chain<A, B>
+where
+    A: PeekableIterator,
+    B: PeekableIterator<Item = A::Item>,
+{
     fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
-        let mut a_opt = &mut self.a;
-        let mut b_opt = &mut self.b;
+        let a_opt = &mut self.a;
+        let b_opt = &mut self.b;
         if let Some(a) = a_opt.as_mut() {
             // Try peeking a
-            let (result, a_empty, b_empty) = a.peek_with(|next_a| {
+            a.peek_with(|next_a| {
                 if next_a.is_some() {
                     func(next_a)
                 }
@@ -346,7 +350,7 @@ impl<A: PeekableIterator, B: PeekableIterator> PeekableIterator for Chain<A, B> 
                 else {
                     func(None)
                 }
-            });
+            })
         }
         else if let Some(b) = b_opt.as_mut() {
             b.peek_with(|next_b| func(next_b))

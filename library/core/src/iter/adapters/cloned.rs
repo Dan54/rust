@@ -2,7 +2,7 @@ use core::num::NonZero;
 
 use crate::iter::adapters::zip::try_get_unchecked;
 use crate::iter::adapters::{SourceIter, TrustedRandomAccess, TrustedRandomAccessNoCoerce};
-use crate::iter::{FusedIterator, InPlaceIterable, TrustedLen, UncheckedIterator};
+use crate::iter::{FusedIterator, InPlaceIterable, PeekableIterator, TrustedLen, UncheckedIterator};
 use crate::ops::Try;
 
 /// An iterator that clones the elements of an underlying iterator.
@@ -190,8 +190,13 @@ unsafe impl<I: InPlaceIterable> InPlaceIterable for Cloned<I> {
 }
 
 #[unstable(feature = "peekable_iterator", issue = "132973")]
-impl<I: PeekableIterator> PeekableIterator for Cloned<I> {
+impl<'b, I, U: 'b> PeekableIterator for Cloned<I>
+where
+    I: PeekableIterator<Item = &'b U>,
+    U: Clone,
+{
     fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
-        self.it.peek_with(|&next| func(next))
+        // use copy to convert Option<&&U> to Option<&U>
+        self.it.peek_with(|next| func(next.copied()))
     }
 }
