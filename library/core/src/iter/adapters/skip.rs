@@ -288,7 +288,8 @@ where
 #[unstable(feature = "trusted_len", issue = "37572")]
 unsafe impl<I> TrustedLen for Skip<I> where I: Iterator + TrustedRandomAccess {}
 
-impl<I: PeekableIterator> PeekableIterator for Skip<I> {
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<I: PeekableIterator + FusedIterator> PeekableIterator for Skip<I> {
     fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
         if self.n > 0 {
             // or equivalently self.iter.advance_by(self.n)

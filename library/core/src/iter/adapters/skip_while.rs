@@ -129,6 +129,7 @@ unsafe impl<I: InPlaceIterable, F> InPlaceIterable for SkipWhile<I, F> {
     const MERGE_BY: Option<NonZero<usize>> = I::MERGE_BY;
 }
 
+#[unstable(feature = "peekable_iterator", issue = "132973")]
 impl<I: PeekableIterator, P: FnMut(&I::Item) -> bool> PeekableIterator for SkipWhile<I, P> {
     fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
         if self.flag {
