@@ -34,7 +34,7 @@ where
     loop {
         let expected = iter.next();
         assert!(peeking_iter.peek_with(|next| next == expected.as_ref()));
-        assert_eq!(peeking_iter.next(), expected);
+        assert!(peeking_iter.next() == expected);
         if expected.is_none() {
             break;
         }

@@ -69,7 +69,7 @@ fn test_peekable_skip_while() {
         let mut iter = CycleIter::new(&[0, 1, 2])
             .skip_while(move |_| {
                 counter += 1;
-                counter != 4
+                counter != 5
             });
         assert!(iter.peek_with(|x| x == None));
         assert_eq!(iter.next(), None);

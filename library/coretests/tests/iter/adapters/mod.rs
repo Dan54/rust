@@ -166,7 +166,7 @@ impl<'a, T> Iterator for CycleIter<'a, T> {
     }
 }
 
-impl<'a, T> PeekableIteratorIterator for CycleIter<'a, T> {
+impl<'a, T> PeekableIterator for CycleIter<'a, T> {
     fn peek_with<U>(&mut self, func: impl for<'b> FnOnce(Option<&'b Self::Item>) -> U) -> U {
         func(self.data.get(self.index).as_ref())
     }

@@ -293,7 +293,7 @@ impl<I: PeekableIterator + FusedIterator> PeekableIterator for Skip<I> {
     fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
         if self.n > 0 {
             // or equivalently self.iter.advance_by(self.n)
-            self.iter.nth(n-1)
+            self.iter.nth(self.n-1);
             self.n = 0;
         }
         self.iter.peek_with(func)

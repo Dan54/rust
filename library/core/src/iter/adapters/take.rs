@@ -375,6 +375,7 @@ impl<F: FnMut() -> A, A> ExactSizeIterator for Take<crate::iter::RepeatWith<F>> 
     }
 }
 
+#[unstable(feature = "peekable_iterator", issue = "132973")]
 impl<I: PeekableIterator> PeekableIterator for Take<I> {
     fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
         if self.n > 0 {

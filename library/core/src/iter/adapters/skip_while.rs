@@ -136,7 +136,7 @@ impl<I: PeekableIterator, P: FnMut(&I::Item) -> bool> PeekableIterator for SkipW
             self.iter.peek_with(func)
         } else {
             while self.iter.peek_with(|opt| match opt {
-                Some(x) if self.predicate(x) => true,
+                Some(x) if (self.predicate)(x) => true,
                 Some(_) => {
                     self.flag = true;
                     false
