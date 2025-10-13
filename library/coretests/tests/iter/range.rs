@@ -502,3 +502,22 @@ fn test_double_ended_range() {
         panic!("unreachable");
     }
 }
+
+#[test]
+fn test_peekable_range() {
+    test_peekable_iterator(0..5);
+}
+
+#[test]
+fn test_peekable_range_inclusive() {
+    test_peekable_iterator(0..=5);
+}
+
+#[test]
+fn test_peekable_range_from() {
+    let mut iter = 1..;
+    assert!(iter.peek_with(|x| x == Some(&1)));
+    assert_eq!(iter.next(), Some(1));
+    assert!(iter.peek_with(|x| x == Some(&2)));
+    assert_eq!(iter.next(), Some(2));
+}

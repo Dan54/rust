@@ -1,5 +1,7 @@
 use core::iter::*;
 
+use super::*;
+
 #[test]
 fn test_iterator_skip_while() {
     let xs = [0, 1, 2, 3, 5, 13, 15, 16, 17, 19];
@@ -47,4 +49,31 @@ fn test_skip_while_try_fold() {
     let mut iter = (0..50).skip_while(|&x| (x % 20) < 15);
     assert_eq!(iter.try_fold(0, i8::checked_add), None);
     assert_eq!(iter.next(), Some(23));
+}
+
+#[test]
+fn test_peekable_skip_while() {
+    test_peekable_iterator((0..10).skip_while(|&n| n < 5));
+
+    {
+        let mut counter = 0;
+        test_peekable_iterator((0..10).skip_while(move |_| {
+            counter += 1;
+            counter != 5
+        }));
+    }
+    
+    {
+        // Test on unfused iterators
+        let mut counter = 0;
+        let mut iter = CycleIter::new(&[0, 1, 2])
+            .skip_while(move |_| {
+                counter += 1;
+                counter != 4
+            });
+        assert!(iter.peek_with(|x| x == None));
+        assert_eq!(iter.next(), None);
+        assert!(iter.peek_with(|x| x == Some(&&1)));
+        assert_eq!(iter.next(), Some(&1));
+    }
 }

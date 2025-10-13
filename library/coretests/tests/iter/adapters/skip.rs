@@ -236,3 +236,8 @@ fn test_skip_overflow_wrapping() {
     let wrap = WrappingIterator(0);
     assert_eq!(wrap.skip(20).nth(usize::MAX), Some(20));
 }
+
+#[test]
+fn test_peekable_skip() {
+    super::test_peekable_iterator((0..10).skip(5));
+}

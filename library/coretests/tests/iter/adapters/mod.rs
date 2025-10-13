@@ -24,6 +24,9 @@ mod take_while;
 mod zip;
 
 use core::cell::Cell;
+use core::iter::PeekableIterator;
+
+pub use super::test_peekable_iterator;
 
 /// An iterator that panics whenever `next` or `next_back` is called
 /// after `None` has already been returned. This does not violate
@@ -160,6 +163,12 @@ impl<'a, T> Iterator for CycleIter<'a, T> {
         self.index += 1;
         self.index %= 1 + self.data.len();
         elt
+    }
+}
+
+impl<'a, T> PeekableIteratorIterator for CycleIter<'a, T> {
+    fn peek_with<U>(&mut self, func: impl for<'b> FnOnce(Option<&'b Self::Item>) -> U) -> U {
+        func(self.data.get(self.index).as_ref())
     }
 }
 

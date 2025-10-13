@@ -29,3 +29,8 @@ fn test_cycle() {
     iter.nth(9);
     assert_eq!(iter.take(3).sum::<i32>(), 3);
 }
+
+#[test]
+fn test_peekable_cycle() {
+    super::test_peekable_iterator((0..3).cycle().take(10));
+}

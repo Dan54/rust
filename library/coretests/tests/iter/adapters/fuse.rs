@@ -1,5 +1,7 @@
 use core::iter::*;
 
+use super::*;
+
 #[test]
 fn test_fuse_nth() {
     let xs = [0, 1, 2];
@@ -72,4 +74,21 @@ fn test_fuse() {
     assert_eq!(it.len(), 0);
     assert_eq!(it.next(), None);
     assert_eq!(it.len(), 0);
+}
+
+#[test]
+fn test_peekable_fuse() {
+    // test with I: FusedIterator
+    test_peekable_iterator((0..5).fuse());
+
+    // test with unfused iterator
+    let mut iter = CycleIter::new(&[0, 1]).fuse();
+    assert!(iter.peek_with(|x| x == Some(&&0)));
+    assert_eq!(iter.next(), Some(&0));
+    assert!(iter.peek_with(|x| x == Some(&&1)));
+    assert_eq!(iter.next(), Some(&1));
+    assert!(iter.peek_with(|x| x == None));
+    assert_eq!(iter.next(), None);
+    assert!(iter.peek_with(|x| x == None));
+    assert_eq!(iter.next(), None);
 }

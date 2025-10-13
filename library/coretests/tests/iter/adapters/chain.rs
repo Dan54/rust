@@ -291,3 +291,8 @@ fn test_double_ended_chain() {
     assert_eq!(CrazyIterator::new().chain(0..10).rev().last(), Some(0));
     assert!((0..10).chain(CrazyIterator::new()).rev().any(|i| i == 0));
 }
+
+#[test]
+fn test_peekable_chain() {
+    test_peekable_iterator((0..5).chain(10..15));
+}

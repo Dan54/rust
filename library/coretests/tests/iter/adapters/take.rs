@@ -260,3 +260,8 @@ fn test_reverse_on_zip() {
         assert_eq!((1, 0), (one, zero));
     }
 }
+
+#[test]
+fn test_peekable_take() {
+    super::test_peekable_iterator((0..10).take(5));
+}

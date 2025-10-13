@@ -25,6 +25,22 @@ use core::iter::*;
 
 pub fn is_trusted_len<I: TrustedLen>(_: I) {}
 
+pub fn test_peekable_iterator<I>(mut iter: I)
+where
+    I: Clone + PeekableIterator,
+    <I as Iterator>:: Item: Eq,
+{
+    let mut peeking_iter = iter.clone();
+    loop {
+        let expected = iter.next();
+        assert!(peeking_iter.peek_with(|next| next == expected.as_ref()));
+        assert_eq!(peeking_iter.next(), expected);
+        if expected.is_none() {
+            break;
+        }
+    }
+}
+
 #[test]
 fn test_multi_iter() {
     let xs = [1, 2, 3, 4];
