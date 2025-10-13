@@ -2,7 +2,7 @@ use crate::intrinsics;
 use crate::iter::adapters::SourceIter;
 use crate::iter::adapters::zip::try_get_unchecked;
 use crate::iter::{
-    FusedIterator, TrustedFused, TrustedLen, TrustedRandomAccess, TrustedRandomAccessNoCoerce,
+    FusedIterator, PeekableIterator, TrustedFused, TrustedLen, TrustedRandomAccess, TrustedRandomAccessNoCoerce,
 };
 use crate::ops::Try;
 
@@ -461,6 +461,16 @@ where
         // TrustedFused guarantees that we'll never encounter a case where `self.iter` would
         // be set to None.
         unsafe { SourceIter::as_inner(self.iter.as_mut().unwrap_unchecked()) }
+    }
+}
+
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<I: PeekableIterator> PeekableIterator for Fuse<I> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        match self.iter {
+            Some(ref mut iter) => iter.peek_with(func),
+            _ => func(None),
+        }
     }
 }
 

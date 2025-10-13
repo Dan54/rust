@@ -1,6 +1,6 @@
 use crate::fmt;
 use crate::iter::adapters::SourceIter;
-use crate::iter::{FusedIterator, InPlaceIterable, TrustedFused};
+use crate::iter::{FusedIterator, PeekableIterator, InPlaceIterable, TrustedFused};
 use crate::num::NonZero;
 use crate::ops::Try;
 
@@ -127,4 +127,22 @@ where
 unsafe impl<I: InPlaceIterable, F> InPlaceIterable for SkipWhile<I, F> {
     const EXPAND_BY: Option<NonZero<usize>> = I::EXPAND_BY;
     const MERGE_BY: Option<NonZero<usize>> = I::MERGE_BY;
+}
+
+impl<I: PeekableIterator, P: FnMut(&I::Item) -> bool> PeekableIterator for SkipWhile<I, P> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        if self.flag {
+            self.iter.peek_with(func)
+        } else {
+            while self.iter.peek_with(|opt| match opt {
+                Some(x) => self.predicate(x),
+                _ => false,
+            })
+            {
+                self.iter.next();
+            }
+            self.flag = true;
+            self.iter.peek_with(func)
+        }
+    }
 }

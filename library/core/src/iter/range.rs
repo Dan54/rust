@@ -1014,8 +1014,7 @@ impl<A: Step> PeekableIterator for ops::Range<A> {
         func(
             if self.start < self.end {
                 Some(&self.start)
-            }
-            else {
+            } else {
                 None
             }
         )
@@ -1424,8 +1423,7 @@ impl<A: Step> PeekableIterator for ops::RangeInclusive<A> {
         func(
             if self.is_empty() {
                 None
-            }
-            else {
+            } else {
                 Some(&self.start)
             }
         )

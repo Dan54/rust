@@ -2,7 +2,7 @@ use crate::intrinsics::unlikely;
 use crate::iter::adapters::SourceIter;
 use crate::iter::adapters::zip::try_get_unchecked;
 use crate::iter::{
-    FusedIterator, InPlaceIterable, TrustedFused, TrustedLen, TrustedRandomAccess,
+    FusedIterator, InPlaceIterable, PeekableIterator, TrustedFused, TrustedLen, TrustedRandomAccess,
     TrustedRandomAccessNoCoerce,
 };
 use crate::num::NonZero;
@@ -287,3 +287,14 @@ where
 // I: TrustedLen would not.
 #[unstable(feature = "trusted_len", issue = "37572")]
 unsafe impl<I> TrustedLen for Skip<I> where I: Iterator + TrustedRandomAccess {}
+
+impl<I: PeekableIterator> PeekableIterator for Skip<I> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        if self.n > 0 {
+            // or equivalently self.iter.advance_by(self.n)
+            self.iter.nth(n-1)
+            self.n = 0;
+        }
+        self.iter.peek_with(func)
+    }
+}

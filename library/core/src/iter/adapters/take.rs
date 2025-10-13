@@ -1,6 +1,6 @@
 use crate::cmp;
 use crate::iter::adapters::SourceIter;
-use crate::iter::{FusedIterator, InPlaceIterable, TrustedFused, TrustedLen, TrustedRandomAccess};
+use crate::iter::{FusedIterator, InPlaceIterable, PeekableIterator, TrustedFused, TrustedLen, TrustedRandomAccess};
 use crate::num::NonZero;
 use crate::ops::{ControlFlow, Try};
 
@@ -372,5 +372,15 @@ impl<T: Clone> ExactSizeIterator for Take<crate::iter::Repeat<T>> {
 impl<F: FnMut() -> A, A> ExactSizeIterator for Take<crate::iter::RepeatWith<F>> {
     fn len(&self) -> usize {
         self.n
+    }
+}
+
+impl<I: PeekableIterator> PeekableIterator for Take<I> {
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        if self.n > 0 {
+            self.iter.peek_with(func)
+        } else {
+            func(None)
+        }
     }
 }

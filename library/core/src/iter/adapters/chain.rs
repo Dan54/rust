@@ -341,21 +341,17 @@ where
             a.peek_with(|next_a| {
                 if next_a.is_some() {
                     func(next_a)
-                }
-                // if a is empty, try peeking b
-                else if let Some(b) = b_opt.as_mut() {
-                    b.peek_with(|next_b| func(next_b))
-                }
-                // if both are empty, then Chain is empty
-                else {
+                } else if let Some(b) = b_opt.as_mut() {
+                    // if a is empty, try peeking b
+                    b.peek_with(func)
+                } else {
+                    // if both are empty, then Chain is empty
                     func(None)
                 }
             })
-        }
-        else if let Some(b) = b_opt.as_mut() {
-            b.peek_with(|next_b| func(next_b))
-        }
-        else {
+        } else if let Some(b) = b_opt.as_mut() {
+            b.peek_with(func)
+        } else {
             func(None)
         }
     }

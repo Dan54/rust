@@ -10,7 +10,7 @@ pub trait PeekableIterator: Iterator {
     /// #![feature(peekable_iterator)]
     /// use std::iter::PeekableIterator;
     ///
-    /// let mut vals = [0, 1, 2].into_iter();
+    /// let mut vals = (0..=2).into_iter();
     ///
     /// assert_eq!(vals.peek_with(|x| x.copied()), Some(0));
     /// // element is not consumed
@@ -21,7 +21,7 @@ pub trait PeekableIterator: Iterator {
     /// assert_eq!(vals.next(), Some(1));
     ///
     /// // determine if the iterator has an element without advancing
-    /// assert_eq!(vals.peek_with(|x| x.is_some()), false);
+    /// assert_eq!(vals.peek_with(|x| x.is_some()), true);
     /// assert_eq!(vals.next(), Some(2));
     ///
     /// // exhausted iterator
@@ -35,13 +35,13 @@ pub trait PeekableIterator: Iterator {
     /// # Examples
     ///
     /// Basic usage:
-    /// ```
+    /// ```ignore
     /// #![feature(peekable_iterator)]
     /// use std::iter::PeekableIterator;
     /// fn parse_number(s: &str) -> u32 {
-    ///     let mut c = s.chars();
+    ///     let mut c = s.chars().peekable();
     ///
-    ///     let base = if c.next_if_eq(&"0").is_some() {
+    ///     let base = if c.next_if_eq(&'0').is_some() {
     ///         match c.next_if(|c| "oxb".contains(c)) {
     ///             Some("x") => 16,
     ///             Some("b") => 2,

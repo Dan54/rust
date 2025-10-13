@@ -1,4 +1,4 @@
-use crate::iter::FusedIterator;
+use crate::iter::{FusedIterator, PeekableIterator};
 use crate::num::NonZero;
 use crate::ops::Try;
 
@@ -107,3 +107,16 @@ where
 
 #[stable(feature = "fused", since = "1.26.0")]
 impl<I> FusedIterator for Cycle<I> where I: Clone + Iterator {}
+
+#[unstable(feature = "peekable_iterator", issue = "132973")]
+impl<I> PeekableIterator for Cycle<I>
+where
+    I: Clone + PeekableIterator,
+{
+    fn peek_with<T>(&mut self, func: impl for<'a> FnOnce(Option<&'a Self::Item>) -> T) -> T {
+        self.iter.peek_with(|next| match next {
+            Some(_) => func(next),
+            None => self.orig.peek_with(func),
+        })
+    }
+}
