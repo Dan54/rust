@@ -169,7 +169,23 @@ macro_rules! zip_impl_general_defaults {
 
         #[inline]
         default fn advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
-            self.super_advance_by(n)
+            let safe_advance = n.min(self.size_hint().0);
+            if safe_advance > 0 {
+                // we should be able to advance by safe_advance
+                // if not, we cannot return the correct Err(remaining)
+                // and we will advance the other iterator the wrong amount
+                let a_nth = self.a.nth(safe_advance - 1);
+                assert!(
+                    a_nth.is_some(),
+                    "Incorrect size_hint for first iterator: iterator too short"
+                );
+                let b_nth = self.b.nth(safe_advance - 1);
+                assert!(
+                    b_nth.is_some(),
+                    "Incorrect size_hint for second iterator: iterator too short"
+                );
+            }
+            self.super_advance_by(n - safe_advance)
         }
 
         #[inline]
