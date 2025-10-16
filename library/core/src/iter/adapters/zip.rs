@@ -23,14 +23,14 @@ impl<A: Iterator, B: Iterator> Zip<A, B> {
     pub(in crate::iter) fn new(a: A, b: B) -> Zip<A, B> {
         ZipImpl::new(a, b)
     }
-    fn super_nth(&mut self, mut n: usize) -> Option<(A::Item, B::Item)> {
-        while let Some(x) = Iterator::next(self) {
-            if n == 0 {
-                return Some(x);
+    fn super_advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
+        for i in 0..n {
+            if self.next().is_none() {
+                // SAFETY: `i` is always less than `n`.
+                return Err(unsafe { NonZero::new_unchecked(n - i) });
             }
-            n -= 1;
         }
-        None
+        Ok(())
     }
 }
 
@@ -91,8 +91,8 @@ where
     }
 
     #[inline]
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
-        ZipImpl::nth(self, n)
+    fn advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
+        ZipImpl::advance_by(self, n)
     }
 
     #[inline]
@@ -133,7 +133,7 @@ trait ZipImpl<A, B> {
     fn new(a: A, b: B) -> Self;
     fn next(&mut self) -> Option<Self::Item>;
     fn size_hint(&self) -> (usize, Option<usize>);
-    fn nth(&mut self, n: usize) -> Option<Self::Item>;
+    fn advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>>;
     fn next_back(&mut self) -> Option<Self::Item>
     where
         A: DoubleEndedIterator + ExactSizeIterator,
@@ -168,8 +168,8 @@ macro_rules! zip_impl_general_defaults {
         }
 
         #[inline]
-        default fn nth(&mut self, n: usize) -> Option<Self::Item> {
-            self.super_nth(n)
+        default fn advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
+            self.super_advance_by(n)
         }
 
         #[inline]
@@ -324,7 +324,7 @@ where
     }
 
     #[inline]
-    fn nth(&mut self, n: usize) -> Option<Self::Item> {
+    fn advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
         let delta = cmp::min(n, self.len - self.index);
         let end = self.index + delta;
         while self.index < end {
@@ -348,7 +348,7 @@ where
             }
         }
 
-        self.super_nth(n - delta)
+        self.super_advance_by(n - delta)
     }
 
     #[inline]
