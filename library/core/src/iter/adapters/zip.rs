@@ -25,7 +25,7 @@ impl<A: Iterator, B: Iterator> Zip<A, B> {
     }
     fn super_advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
         for i in 0..n {
-            if self.next().is_none() {
+            if ZipImpl::next(self).is_none() {
                 // SAFETY: `i` is always less than `n`.
                 return Err(unsafe { NonZero::new_unchecked(n - i) });
             }
@@ -124,6 +124,10 @@ where
     fn next_back(&mut self) -> Option<(A::Item, B::Item)> {
         ZipImpl::next_back(self)
     }
+    #[inline]
+    fn advance_back_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
+        ZipImpl::advance_back_by(self, n)
+    }
 }
 
 // Zip specialization trait
@@ -135,6 +139,10 @@ trait ZipImpl<A, B> {
     fn size_hint(&self) -> (usize, Option<usize>);
     fn advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>>;
     fn next_back(&mut self) -> Option<Self::Item>
+    where
+        A: DoubleEndedIterator + ExactSizeIterator,
+        B: DoubleEndedIterator + ExactSizeIterator;
+    fn advance_back_by(&mut self, n: usize) -> Result<(), NonZero<usize>>
     where
         A: DoubleEndedIterator + ExactSizeIterator,
         B: DoubleEndedIterator + ExactSizeIterator;
@@ -169,7 +177,7 @@ macro_rules! zip_impl_general_defaults {
 
         #[inline]
         default fn advance_by(&mut self, n: usize) -> Result<(), NonZero<usize>> {
-            let safe_advance = n.min(self.size_hint().0);
+            let safe_advance = cmp::min(n, self.size_hint().0);
             if safe_advance > 0 {
                 // we should be able to advance by safe_advance
                 // if not, we cannot return the correct Err(remaining)
@@ -216,6 +224,34 @@ macro_rules! zip_impl_general_defaults {
                 (Some(x), Some(y)) => Some((x, y)),
                 (None, None) => None,
                 _ => unreachable!(),
+            }
+        }
+
+        #[inline]
+        default fn advance_back_by(&mut self, n: usize) -> Result<(), NonZero<usize>>
+        where
+            A: DoubleEndedIterator + ExactSizeIterator,
+            B: DoubleEndedIterator + ExactSizeIterator,
+        {
+            // The function body below only uses `self.a/b.len()` and `self.a/b.next_back()`
+            // and doesn’t call `next_back` too often, so this implementation is safe in
+            // the `TrustedRandomAccessNoCoerce` specialization
+
+            let a_sz = self.a.len();
+            let b_sz = self.b.len();
+            let old_sz = cmp::min(a_sz, b_sz);
+            let new_len = old_sz.saturating_sub(n);
+            if a_sz > new_len {
+                self.a.nth_back(a_sz - new_len - 1);
+            }
+            if b_sz > new_len {
+                self.b.nth_back(b_sz - new_len - 1);
+            }
+            if old_sz < n {
+                // SAFETY: `old_sz` is less than `n`.
+                Err(unsafe { NonZero::new_unchecked(n - old_sz) })
+            } else {
+                Ok(())
             }
         }
     };
@@ -417,6 +453,55 @@ where
             }
         } else {
             None
+        }
+    }
+
+    #[inline]
+    fn advance_back_by(&mut self, n: usize) -> Result<(), NonZero<usize>>
+    where
+        A: DoubleEndedIterator + ExactSizeIterator,
+        B: DoubleEndedIterator + ExactSizeIterator,
+    {
+        // No effects when the iterator is exhausted, to reduce the number of
+        // cases the unsafe code has to handle.
+        // See #137255 for a case where where too many epicycles lead to unsoundness.
+        if self.index < self.len {
+            let old_len = self.len;
+
+            // since the side-effecting code can execute user code
+            // which can panic we decrement the counter beforehand
+            // so that the same index won't be accessed twice, as required by TrustedRandomAccess.
+            // Additionally this will ensure that the side-effects code won't run a second time.
+            self.len = cmp::max(old_len.saturating_sub(n), self.index);
+
+            // Do side-effects
+            if A::MAY_HAVE_SIDE_EFFECT || B::MAY_HAVE_SIDE_EFFECT {
+                // note if some forward-iteration already happened then these aren't the real
+                // remaining lengths of the inner iterators, so we have to relate them to
+                // Zip's internal length-tracking.
+                let sz_a = self.a.size();
+                let sz_b = self.b.size();
+                if A::MAY_HAVE_SIDE_EFFECT && sz_a > self.len {
+                    for _ in 0..sz_a - self.len {
+                        self.a.next_back();
+                    }
+                }
+                if B::MAY_HAVE_SIDE_EFFECT && sz_b > self.len {
+                    for _ in 0..sz_b - self.len {
+                        self.b.next_back();
+                    }
+                }
+                debug_assert_eq!(self.a.size(), self.b.size());
+            }
+            let actual_moves = old_len - self.len;
+            if actual_moves < n {
+                // SAFETY: `actual_moves` is less than `n`.
+                Err(unsafe { NonZero::new_unchecked(n - actual_moves) })
+            } else {
+                Ok(())
+            }
+        } else {
+            NonZero::new(n).map_or(Ok(()), |nz| Err(nz))
         }
     }
 }
